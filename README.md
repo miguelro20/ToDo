@@ -42,4 +42,6 @@
 ---
 ## Tests
 ### Testing is done using the Test Rest Template which simulates use from the web.
+#### Tests are done by calling the api as expected and comparing the response with the expected response. This are found inside HttpRequestTest.
+### Two other tests are run, a Smoke Test, and a test that validates the application is not null.
 
