@@ -3,10 +3,8 @@ package com.example.ToDo.controller;
 import com.example.ToDo.entities.Metrics;
 import com.example.ToDo.entities.ToDo;
 import com.example.ToDo.services.ToDoService;
-import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,12 +18,6 @@ public class Controller {
 
     @Autowired
     public ToDoService toDoService;
-
-    @GetMapping("/home")
-    public String home() {
-
-        return "This is home page";
-    }
 
     @CrossOrigin(origins = "http://localhost:8080")
     @GetMapping("home/todos")
@@ -98,5 +90,4 @@ public class Controller {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 }

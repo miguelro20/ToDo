@@ -72,7 +72,7 @@ public class ToDoServiceImplementation implements ToDoService {
                 "Low",3
                 );
         Comparator<ToDo> comparator = switch (sortBy.toLowerCase()) {
-            case "priority" -> Comparator.comparing(ToDo::getPriority);
+            case "priority" -> Comparator.comparing(todo -> priorityScale.getOrDefault(todo.getPriority(), Integer.MAX_VALUE));
             case "due-date" -> Comparator.comparing(ToDo::getDueDate);
             default -> Comparator.comparing(ToDo::getId);
 
