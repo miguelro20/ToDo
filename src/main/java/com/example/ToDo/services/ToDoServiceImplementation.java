@@ -24,17 +24,17 @@ public class ToDoServiceImplementation implements ToDoService {
     LocalDate creationDate = LocalDate.parse(creationDateString, formatter);
 
     List<ToDo> list = new ArrayList<>(Arrays.asList(
-            new ToDo(1, "Caminar", "Ir a caminar por una hora", "High", false, date, null, creationDate),
-            new ToDo(2, "Cocinar", "Cocinar la comida", "Medium", false, date, null, LocalDate.parse("March 10, 2024", formatter)),
-            new ToDo(3, "Correr", "Correr dos horas", "Medium", false, date, null, LocalDate.parse("March 15, 2024", formatter)),
-            new ToDo(4, "Deporte", "Realizar un deporte", "Medium", false, date, null, LocalDate.parse("December 10, 2024", formatter)),
-            new ToDo(5, "Cocinar", "Cocinar la comida", "Medium", false, date, null, LocalDate.parse("July 10, 2024", formatter)),
-            new ToDo(6, "Cocinar", "Cocinar la comida", "Medium", false, date, null, LocalDate.parse("January 10, 2025", formatter)),
-            new ToDo(7, "Cocinar", "Cocinar la comida", "Medium", false, date, null, LocalDate.parse("January 17, 2024", formatter)),
-            new ToDo(8, "Cocinar", "Cocinar la comida", "Medium", false, date, null, LocalDate.parse("August 25, 2024", formatter)),
-            new ToDo(9, "Cocinar", "Cocinar la comida", "Medium", false, date, null, LocalDate.parse("February 10, 2024", formatter)),
-            new ToDo(10, "Cocinar", "Cocinar la comida", "Medium", false, date, null, LocalDate.parse("January 1, 2025", formatter)),
-            new ToDo(11, "Cocinar", "Cocinar la comida", "Medium", false, date, null, LocalDate.parse("March 10, 2024", formatter))
+            new ToDo(1, "Walk", "Walk for an hour", "High", false, date, null, creationDate),
+            new ToDo(2, "Cook", "Cook 3 meals in a day", "Medium", false, date, null, LocalDate.parse("March 10, 2024", formatter)),
+            new ToDo(3, "Run", "Run for two hours", "Low", false, date, null, LocalDate.parse("March 15, 2024", formatter)),
+            new ToDo(4, "Sports", "Start doing a sport", "Medium", false, date, null, LocalDate.parse("December 10, 2024", formatter)),
+            new ToDo(5, "Movies", "Watch a movie", "Medium", false, date, null, LocalDate.parse("July 10, 2024", formatter)),
+            new ToDo(6, "Go Out", "Go out to dinner once", "Medium", false, date, null, LocalDate.parse("January 10, 2025", formatter)),
+            new ToDo(7, "Write", "Write your weekly essay", "High", false, date, null, LocalDate.parse("January 17, 2024", formatter)),
+            new ToDo(8, "Teach", "Start tutoring others", "Medium", false, date, null, LocalDate.parse("August 25, 2024", formatter)),
+            new ToDo(9, "TV", "Buy a new tv", "Medium", false, date, null, LocalDate.parse("February 10, 2024", formatter)),
+            new ToDo(10, "Shoes", "Buy new shoes", "Low", false, date, null, LocalDate.parse("January 1, 2025", formatter)),
+            new ToDo(11, "Dog", "Take the dog for a walk", "Medium", false, date, null, LocalDate.parse("March 10, 2024", formatter))
     ));
 
     @Override
