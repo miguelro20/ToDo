@@ -2,50 +2,37 @@ package com.example.ToDo.services;
 
 import com.example.ToDo.entities.Metrics;
 import com.example.ToDo.entities.ToDo;
+import com.example.ToDo.repository.ToDoRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.text.DateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-
 @Service
 public class ToDoServiceImplementation implements ToDoService {
 
-    String string = "March 2, 2025";
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH);
-    LocalDate date = LocalDate.parse(string, formatter);
+    private final ToDoRepository toDoRepository;
 
-    String creationDateString = "January 2, 2025";
-    LocalDate creationDate = LocalDate.parse(creationDateString, formatter);
-
-    List<ToDo> list = new ArrayList<>(Arrays.asList(
-            new ToDo(1, "Walk", "Walk for an hour", "High", false, date, null, creationDate),
-            new ToDo(2, "Cook", "Cook 3 meals in a day", "Medium", false, date, null, LocalDate.parse("March 10, 2024", formatter)),
-            new ToDo(3, "Run", "Run for two hours", "Low", false, date, null, LocalDate.parse("March 15, 2024", formatter)),
-            new ToDo(4, "Sports", "Start doing a sport", "Medium", false, date, null, LocalDate.parse("December 10, 2024", formatter)),
-            new ToDo(5, "Movies", "Watch a movie", "Medium", false, date, null, LocalDate.parse("July 10, 2024", formatter)),
-            new ToDo(6, "Go Out", "Go out to dinner once", "Medium", false, date, null, LocalDate.parse("January 10, 2025", formatter)),
-            new ToDo(7, "Write", "Write your weekly essay", "High", false, date, null, LocalDate.parse("January 17, 2024", formatter)),
-            new ToDo(8, "Teach", "Start tutoring others", "Medium", false, date, null, LocalDate.parse("August 25, 2024", formatter)),
-            new ToDo(9, "TV", "Buy a new tv", "Medium", false, date, null, LocalDate.parse("February 10, 2024", formatter)),
-            new ToDo(10, "Shoes", "Buy new shoes", "Low", false, date, null, LocalDate.parse("January 1, 2025", formatter)),
-            new ToDo(11, "Dog", "Take the dog for a walk", "Medium", false, date, null, LocalDate.parse("March 10, 2024", formatter))
-    ));
+    @Autowired
+    public ToDoServiceImplementation(ToDoRepository toDoRepository) {
+        this.toDoRepository = toDoRepository;
+    }
 
     @Override
     public List<ToDo> getToDo() {
-        return list;
+        return toDoRepository.findAll();
     }
 
     @Override
     public ToDo addToDo(ToDo todo) {
-        list.add(todo);
-        return todo;
+        return toDoRepository.save(todo);
     }
 
     @Override
@@ -58,124 +45,96 @@ public class ToDoServiceImplementation implements ToDoService {
             Boolean status,
             String priority
     ) {
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort sort = Sort.by(direction, sortBy);
+        PageRequest pageable = PageRequest.of(page, size, sort);
 
-        List<ToDo> filteredList = list.stream()
-                .filter(todo -> (name == null || todo.getName().toLowerCase().contains(name.toLowerCase())))
-                .filter(todo -> (status == null || todo.isStatus() == status))
-                .filter(todo -> (priority == null || todo.getPriority().toLowerCase().contains(priority.toLowerCase())))
-                .collect(Collectors.toList());
-
-
-        Map<String, Integer> priorityScale= Map.of(
-                "High", 1,
-                "Medium", 2,
-                "Low",3
-                );
-        Comparator<ToDo> comparator = switch (sortBy.toLowerCase()) {
-            case "priority" -> Comparator.comparing(todo -> priorityScale.getOrDefault(todo.getPriority(), Integer.MAX_VALUE));
-            case "due-date" -> Comparator.comparing(ToDo::getDueDate);
-            default -> Comparator.comparing(ToDo::getId);
-
-        };
-        if (sortDir.equalsIgnoreCase("desc")) {
-            comparator = comparator.reversed();
+        Page<ToDo> todoPage;
+        if (name != null || status != null || priority != null) {
+            todoPage = toDoRepository.findByFilters(name, status, priority, pageable);
+        } else {
+            todoPage = toDoRepository.findAll(pageable);
         }
-        filteredList.sort(comparator);
-
-        int totalItems = filteredList.size();
-        int fromIndex = Math.min(page * size, totalItems);
-        int toIndex = Math.min(fromIndex + size, totalItems);
-        List<ToDo> paginatedList = filteredList.subList(fromIndex, toIndex);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("content", paginatedList);
-        response.put("page", page);
-        response.put("size", size);
-        response.put("totalElements", totalItems);
-        response.put("totalPages", (int) Math.ceil((double) totalItems / size));
+        response.put("content", todoPage.getContent());
+        response.put("page", todoPage.getNumber());
+        response.put("size", todoPage.getSize());
+        response.put("totalElements", todoPage.getTotalElements());
+        response.put("totalPages", todoPage.getTotalPages());
         response.put("sortBy", sortBy);
         response.put("sortDir", sortDir);
-        response.put("list", list);
 
         return response;
-
     }
 
     @Override
     public ToDo updateToDo(ToDo todo) {
-        list.forEach(e -> {
-            if (e.getId() == todo.getId()) {
-                e.setName(todo.getName());
-                e.setPriority(todo.getPriority());
-                e.setDueDate(todo.getDueDate());
-            }
-        });
-        return todo;
+        return toDoRepository.save(todo);
     }
 
     @Override
     public void deleteToDo(long id) {
-        list = this.list.stream().filter(e -> e.getId() != id).collect(Collectors.toList());
+        toDoRepository.deleteById(id);
     }
 
     @Override
     public void doneToDo(long toDoId) {
-        list.forEach(e -> {
-            if (e.getId() == toDoId) {
-                e.setStatus(true);
-                e.setDoneDate(LocalDate.now());
-            }
+        toDoRepository.findById(toDoId).ifPresent(todo -> {
+            todo.setStatus(true);
+            todo.setDoneDate(LocalDate.now());
+            toDoRepository.save(todo);
         });
     }
 
     @Override
     public void unDoneToDo(long toDoId) {
-        list.forEach(e -> {
-            if (e.getId() == toDoId) {
-                e.setStatus(false);
-                e.setDoneDate(null);
-            }
+        toDoRepository.findById(toDoId).ifPresent(todo -> {
+            todo.setStatus(false);
+            todo.setDoneDate(null);
+            toDoRepository.save(todo);
         });
     }
 
     @Override
     public Metrics getMetrics() {
-        AtomicLong totalCounter= new AtomicLong(0);
-        AtomicLong totalCount= new AtomicLong(0);
-        list.forEach(e-> {
-            if(e.getDoneDate()!=null){
-                totalCount.addAndGet(ChronoUnit.DAYS.between(e.getCreationDate(),e.getDoneDate()));
+        List<ToDo> todos = toDoRepository.findAll();
+        AtomicLong totalCounter = new AtomicLong(0);
+        AtomicLong totalCount = new AtomicLong(0);
+        todos.forEach(e -> {
+            if (e.getDoneDate() != null) {
+                totalCount.addAndGet(ChronoUnit.DAYS.between(e.getCreationDate(), e.getDoneDate()));
                 totalCounter.addAndGet(1);
             }
         });
-        AtomicLong highCounter= new AtomicLong(0);
-        AtomicLong highCount= new AtomicLong(0);
-        list.forEach(e-> {
-            if(e.getDoneDate()!=null && e.getPriority().equalsIgnoreCase("High")){
-                highCount.addAndGet(ChronoUnit.DAYS.between(e.getCreationDate(),e.getDoneDate()));
+        AtomicLong highCounter = new AtomicLong(0);
+        AtomicLong highCount = new AtomicLong(0);
+        todos.forEach(e -> {
+            if (e.getDoneDate() != null && e.getPriority().equalsIgnoreCase("High")) {
+                highCount.addAndGet(ChronoUnit.DAYS.between(e.getCreationDate(), e.getDoneDate()));
                 highCounter.addAndGet(1);
             }
         });
-        AtomicLong mediumCounter= new AtomicLong(0);
-        AtomicLong mediumCount= new AtomicLong(0);
-        list.forEach(e-> {
-            if(e.getDoneDate()!=null && e.getPriority().equalsIgnoreCase("Medium")){
-                mediumCount.addAndGet(ChronoUnit.DAYS.between(e.getCreationDate(),e.getDoneDate()));
+        AtomicLong mediumCounter = new AtomicLong(0);
+        AtomicLong mediumCount = new AtomicLong(0);
+        todos.forEach(e -> {
+            if (e.getDoneDate() != null && e.getPriority().equalsIgnoreCase("Medium")) {
+                mediumCount.addAndGet(ChronoUnit.DAYS.between(e.getCreationDate(), e.getDoneDate()));
                 mediumCounter.addAndGet(1);
             }
         });
-        AtomicLong lowCounter= new AtomicLong(0);
-        AtomicLong lowCount= new AtomicLong(0);
-        list.forEach(e-> {
-            if(e.getDoneDate()!=null && e.getPriority().equalsIgnoreCase("Low")){
-                lowCount.addAndGet(ChronoUnit.DAYS.between(e.getCreationDate(),e.getDoneDate()));
+        AtomicLong lowCounter = new AtomicLong(0);
+        AtomicLong lowCount = new AtomicLong(0);
+        todos.forEach(e -> {
+            if (e.getDoneDate() != null && e.getPriority().equalsIgnoreCase("Low")) {
+                lowCount.addAndGet(ChronoUnit.DAYS.between(e.getCreationDate(), e.getDoneDate()));
                 lowCounter.addAndGet(1);
             }
         });
-        long totalAverage= totalCounter.get() >0 ? totalCount.get()/totalCounter.get() : 0;
-        long highAverage= highCounter.get() >0 ? highCount.get()/highCounter.get() : 0;
-        long mediumAverage= mediumCounter.get() >0 ? mediumCount.get()/mediumCounter.get() : 0;
-        long lowAverage= lowCounter.get() >0 ? lowCount.get()/lowCounter.get() : 0;
+        long totalAverage = totalCounter.get() > 0 ? totalCount.get() / totalCounter.get() : 0;
+        long highAverage = highCounter.get() > 0 ? highCount.get() / highCounter.get() : 0;
+        long mediumAverage = mediumCounter.get() > 0 ? mediumCount.get() / mediumCounter.get() : 0;
+        long lowAverage = lowCounter.get() > 0 ? lowCount.get() / lowCounter.get() : 0;
         return new Metrics(totalAverage, highAverage, mediumAverage, lowAverage);
     }
 }

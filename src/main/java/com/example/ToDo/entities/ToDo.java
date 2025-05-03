@@ -1,30 +1,68 @@
 package com.example.ToDo.entities;
 
-
-import org.springframework.cglib.core.Local;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDate;
-import java.util.Date;
 
+@Entity
+@Table(name = "todos")
 public class ToDo {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
+    @NotBlank(message = "Name is required")
+    @Column(nullable = false)
     private String name;
+
+    @NotBlank(message = "Description is required")
+    @Column(nullable = false)
     private String description;
+
+    @NotBlank(message = "Priority is required")
+    @Pattern(regexp = "^(High|Medium|Low)$", message = "Priority must be High, Medium, or Low")
+    @Column(nullable = false)
     private String priority;
+
+    @NotNull(message = "Status is required")
+    @Column(nullable = false)
     private Boolean status;
+
+    @NotNull(message = "Due date is required")
+    @Column(nullable = false)
     private LocalDate dueDate;
+
     private LocalDate doneDate;
+
+    @NotNull(message = "Creation date is required")
+    @Column(nullable = false)
     private LocalDate creationDate;
+
+    public ToDo() {
+    }
+
+    public ToDo(String name, String description, String priority, Boolean status, LocalDate dueDate, LocalDate doneDate, LocalDate creationDate) {
+        this.name = name;
+        this.description = description;
+        this.priority = priority;
+        this.status = status;
+        this.dueDate = dueDate;
+        this.doneDate = doneDate;
+        this.creationDate = creationDate;
+    }
 
     public ToDo(long id, String name, String description, String priority, Boolean status, LocalDate dueDate, LocalDate doneDate, LocalDate creationDate) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.priority = priority;
-        this.status= status;
-        this.dueDate= dueDate;
-        this.doneDate= doneDate;
-        this.creationDate= creationDate;
+        this.status = status;
+        this.dueDate = dueDate;
+        this.doneDate = doneDate;
+        this.creationDate = creationDate;
     }
 
     public long getId() {
@@ -64,7 +102,7 @@ public class ToDo {
     }
 
     public void setStatus(Boolean status) {
-        this.status= status;
+        this.status = status;
     }
 
     public LocalDate getDueDate() {

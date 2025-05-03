@@ -2,7 +2,9 @@ package com.example.ToDo.controller;
 
 import com.example.ToDo.entities.Metrics;
 import com.example.ToDo.entities.ToDo;
+import com.example.ToDo.exceptions.ToDoException;
 import com.example.ToDo.services.ToDoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,34 +14,34 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-public class Controller {
-
-
+@RequestMapping("/api")
+@CrossOrigin(origins = "http://localhost:8080")
+public class ToDoController {
 
     @Autowired
-    public ToDoService toDoService;
+    private ToDoService toDoService;
 
-    @CrossOrigin(origins = "http://localhost:8080")
-    @GetMapping("home/todos")
-        public List<ToDo> getToDos() {
-            return this.toDoService.getToDo();
+    @GetMapping("/home/todos")
+    public List<ToDo> getToDos() {
+        return this.toDoService.getToDo();
     }
 
-    @CrossOrigin(origins = "http://localhost:8080")
-    @PostMapping("api/todos")
-    public ResponseEntity<ToDo>addToDo(@RequestBody ToDo todo){
-        ToDo toDoReturn = this.toDoService.addToDo(todo);
-        return new ResponseEntity<>(toDoReturn,HttpStatus.CREATED);
+    @PostMapping("/todos")
+    public ResponseEntity<ToDo> addToDo(@Valid @RequestBody ToDo todo) {
+        try {
+            ToDo toDoReturn = this.toDoService.addToDo(todo);
+            return new ResponseEntity<>(toDoReturn, HttpStatus.CREATED);
+        } catch (Exception e) {
+            throw new ToDoException("TODO_CREATION_ERROR", "Failed to create todo: " + e.getMessage());
+        }
     }
 
-    @CrossOrigin(origins = "http://localhost:8080")
-    @GetMapping("api/metrics")
+    @GetMapping("/metrics")
     public Metrics getMetrics() {
         return this.toDoService.getMetrics();
     }
 
-    @CrossOrigin(origins = "http://localhost:8080")
-    @GetMapping("api/todos")
+    @GetMapping("/todos")
     public Map<String, Object> getFilteredToDos(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -48,46 +50,46 @@ public class Controller {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Boolean status,
             @RequestParam(required = false) String priority
-    ){
+    ) {
         return toDoService.getFilteredToDos(page, size, sortBy, sortDir, name, status, priority);
     }
 
-    @CrossOrigin(origins = "http://localhost:8080")
-    @PutMapping("api/updateToDo")
-    public ToDo updateToDo(@RequestBody ToDo todo){
-        return this.toDoService.updateToDo(todo);
+    @PutMapping("/updateToDo")
+    public ToDo updateToDo(@Valid @RequestBody ToDo todo) {
+        try {
+            return this.toDoService.updateToDo(todo);
+        } catch (Exception e) {
+            throw new ToDoException("TODO_UPDATE_ERROR", "Failed to update todo: " + e.getMessage());
+        }
     }
 
-    @CrossOrigin(origins = "http://localhost:8080")
-    @PutMapping("api/done/{toDoId}")
-    public ResponseEntity<HttpStatus> doneToDo(@PathVariable long toDoId){
+    @PutMapping("/done/{toDoId}")
+    public ResponseEntity<HttpStatus> doneToDo(@PathVariable long toDoId) {
         try {
             this.toDoService.doneToDo(toDoId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ToDoException("TODO_UPDATE_ERROR", "Failed to mark todo as done: " + e.getMessage());
         }
     }
 
-    @CrossOrigin(origins = "http://localhost:8080")
-    @PutMapping("api/undone/{toDoId}")
-    public ResponseEntity<HttpStatus> unDoneToDo(@PathVariable long toDoId){
+    @PutMapping("/undone/{toDoId}")
+    public ResponseEntity<HttpStatus> unDoneToDo(@PathVariable long toDoId) {
         try {
             this.toDoService.unDoneToDo(toDoId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ToDoException("TODO_UPDATE_ERROR", "Failed to mark todo as undone: " + e.getMessage());
         }
     }
 
-    @CrossOrigin(origins = "http://localhost:8080")
-    @DeleteMapping("api/delete/{toDoId}")
+    @DeleteMapping("/delete/{toDoId}")
     public ResponseEntity<HttpStatus> deleteToDo(@PathVariable long toDoId) {
         try {
             this.toDoService.deleteToDo(toDoId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ToDoException("TODO_DELETE_ERROR", "Failed to delete todo: " + e.getMessage());
         }
     }
 }
