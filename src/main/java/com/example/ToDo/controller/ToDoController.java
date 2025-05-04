@@ -13,19 +13,39 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST Controller for managing ToDo items.
+ * Provides endpoints for CRUD operations and metrics retrieval.
+ */
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = "http://localhost:8080")
 public class ToDoController {
 
-    @Autowired
-    private ToDoService toDoService;
+    private final ToDoService toDoService;
 
+    @Autowired
+    public ToDoController(ToDoService toDoService) {
+        this.toDoService = toDoService;
+    }
+
+    /**
+     * Retrieves all ToDo items.
+     *
+     * @return List of all ToDo items
+     */
     @GetMapping("/home/todos")
     public List<ToDo> getToDos() {
         return this.toDoService.getToDo();
     }
 
+    /**
+     * Creates a new ToDo item.
+     *
+     * @param todo The ToDo item to create
+     * @return ResponseEntity containing the created ToDo item and HTTP status
+     * @throws ToDoException if creation fails
+     */
     @PostMapping("/todos")
     public ResponseEntity<ToDo> addToDo(@Valid @RequestBody ToDo todo) {
         try {
@@ -36,11 +56,28 @@ public class ToDoController {
         }
     }
 
+    /**
+     * Retrieves metrics about ToDo items.
+     *
+     * @return Metrics object containing statistics
+     */
     @GetMapping("/metrics")
     public Metrics getMetrics() {
         return this.toDoService.getMetrics();
     }
 
+    /**
+     * Retrieves filtered and paginated ToDo items.
+     *
+     * @param page Page number (0-based)
+     * @param size Number of items per page
+     * @param sortBy Field to sort by
+     * @param sortDir Sort direction (asc/desc)
+     * @param name Filter by name (optional)
+     * @param status Filter by status (optional)
+     * @param priority Filter by priority (optional)
+     * @return Map containing paginated results and metadata
+     */
     @GetMapping("/todos")
     public Map<String, Object> getFilteredToDos(
             @RequestParam(defaultValue = "0") int page,
@@ -54,6 +91,13 @@ public class ToDoController {
         return toDoService.getFilteredToDos(page, size, sortBy, sortDir, name, status, priority);
     }
 
+    /**
+     * Updates an existing ToDo item.
+     *
+     * @param todo The ToDo item to update
+     * @return Updated ToDo item
+     * @throws ToDoException if update fails
+     */
     @PutMapping("/updateToDo")
     public ToDo updateToDo(@Valid @RequestBody ToDo todo) {
         try {
@@ -63,6 +107,13 @@ public class ToDoController {
         }
     }
 
+    /**
+     * Marks a ToDo item as done.
+     *
+     * @param toDoId ID of the ToDo item to mark as done
+     * @return ResponseEntity with HTTP status
+     * @throws ToDoException if operation fails
+     */
     @PutMapping("/done/{toDoId}")
     public ResponseEntity<HttpStatus> doneToDo(@PathVariable long toDoId) {
         try {
@@ -73,6 +124,13 @@ public class ToDoController {
         }
     }
 
+    /**
+     * Marks a ToDo item as undone.
+     *
+     * @param toDoId ID of the ToDo item to mark as undone
+     * @return ResponseEntity with HTTP status
+     * @throws ToDoException if operation fails
+     */
     @PutMapping("/undone/{toDoId}")
     public ResponseEntity<HttpStatus> unDoneToDo(@PathVariable long toDoId) {
         try {
@@ -83,6 +141,13 @@ public class ToDoController {
         }
     }
 
+    /**
+     * Deletes a ToDo item.
+     *
+     * @param toDoId ID of the ToDo item to delete
+     * @return ResponseEntity with HTTP status
+     * @throws ToDoException if deletion fails
+     */
     @DeleteMapping("/delete/{toDoId}")
     public ResponseEntity<HttpStatus> deleteToDo(@PathVariable long toDoId) {
         try {

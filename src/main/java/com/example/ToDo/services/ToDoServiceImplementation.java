@@ -3,11 +3,16 @@ package com.example.ToDo.services;
 import com.example.ToDo.entities.Metrics;
 import com.example.ToDo.entities.ToDo;
 import com.example.ToDo.repository.ToDoRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -18,6 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class ToDoServiceImplementation implements ToDoService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ToDoServiceImplementation.class);
     private final ToDoRepository toDoRepository;
 
     @Autowired
@@ -26,16 +32,22 @@ public class ToDoServiceImplementation implements ToDoService {
     }
 
     @Override
+    @Cacheable("todos")
     public List<ToDo> getToDo() {
+        logger.info("Fetching all todos");
         return toDoRepository.findAll();
     }
 
     @Override
+    @CacheEvict(value = {"todos", "metrics"}, allEntries = true)
+    @Transactional
     public ToDo addToDo(ToDo todo) {
+        logger.info("Adding new todo: {}", todo.getName());
         return toDoRepository.save(todo);
     }
 
     @Override
+    @Cacheable(value = "todos", key = "#root.methodName + #page + #size + #sortBy + #sortDir + #name + #status + #priority")
     public Map<String, Object> getFilteredToDos(
             int page,
             int size,
@@ -45,8 +57,20 @@ public class ToDoServiceImplementation implements ToDoService {
             Boolean status,
             String priority
     ) {
+        logger.info("Fetching filtered todos with page={}, size={}, sortBy={}, sortDir={}, name={}, status={}, priority={}",
+                page, size, sortBy, sortDir, name, status, priority);
+        
         Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, sortBy);
+        String sortField = sortBy;
+        
+        // Map frontend sort field names to entity field names
+        if ("due-date".equalsIgnoreCase(sortBy)) {
+            sortField = "dueDate";
+        } else if ("priority".equalsIgnoreCase(sortBy)) {
+            sortField = "priority";
+        }
+        
+        Sort sort = Sort.by(direction, sortField);
         PageRequest pageable = PageRequest.of(page, size, sort);
 
         Page<ToDo> todoPage;
@@ -64,22 +88,34 @@ public class ToDoServiceImplementation implements ToDoService {
         response.put("totalPages", todoPage.getTotalPages());
         response.put("sortBy", sortBy);
         response.put("sortDir", sortDir);
+        response.put("first", todoPage.isFirst());
+        response.put("last", todoPage.isLast());
+        response.put("empty", todoPage.isEmpty());
 
         return response;
     }
 
     @Override
+    @CacheEvict(value = {"todos", "metrics"}, allEntries = true)
+    @Transactional
     public ToDo updateToDo(ToDo todo) {
+        logger.info("Updating todo with id: {}", todo.getId());
         return toDoRepository.save(todo);
     }
 
     @Override
+    @CacheEvict(value = {"todos", "metrics"}, allEntries = true)
+    @Transactional
     public void deleteToDo(long id) {
+        logger.info("Deleting todo with id: {}", id);
         toDoRepository.deleteById(id);
     }
 
     @Override
+    @CacheEvict(value = {"todos", "metrics"}, allEntries = true)
+    @Transactional
     public void doneToDo(long toDoId) {
+        logger.info("Marking todo as done with id: {}", toDoId);
         toDoRepository.findById(toDoId).ifPresent(todo -> {
             todo.setStatus(true);
             todo.setDoneDate(LocalDate.now());
@@ -88,7 +124,10 @@ public class ToDoServiceImplementation implements ToDoService {
     }
 
     @Override
+    @CacheEvict(value = {"todos", "metrics"}, allEntries = true)
+    @Transactional
     public void unDoneToDo(long toDoId) {
+        logger.info("Marking todo as undone with id: {}", toDoId);
         toDoRepository.findById(toDoId).ifPresent(todo -> {
             todo.setStatus(false);
             todo.setDoneDate(null);
@@ -97,7 +136,9 @@ public class ToDoServiceImplementation implements ToDoService {
     }
 
     @Override
+    @Cacheable("metrics")
     public Metrics getMetrics() {
+        logger.info("Calculating metrics");
         List<ToDo> todos = toDoRepository.findAll();
         AtomicLong totalCounter = new AtomicLong(0);
         AtomicLong totalCount = new AtomicLong(0);
