@@ -29,7 +29,7 @@ public class HttpRequestTest {
     String creationDateString = "January 2, 2025";
     LocalDate creationDate = LocalDate.parse(creationDateString, formatter);
 
-    ToDo postToDo =  new ToDo(15,
+    ToDo postToDo = new ToDo(
             "Caminar Rapido",
             "Ir a caminar por una hora rapido",
             "High",
@@ -54,14 +54,14 @@ public class HttpRequestTest {
 
     @Test
     void testGetTodos() throws Exception {
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/home/todos",
-                String.class)).contains("Caminar");
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/todos",
+                String.class)).contains("content");
     }
 
     @Test
     void testGetFilteredToDos() throws Exception {
         assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/todos?name=&status=&priority=&page=0&size=10&sortBy=id&sortDir=asc",
-                String.class)).contains("content", "page", "size", "totalElements", "totalPages", "sortBy", "sortDir", "list");
+                String.class)).contains("content", "page", "size", "totalElements", "totalPages", "sortBy", "sortDir", "first", "last", "empty");
     }
 
     @Test

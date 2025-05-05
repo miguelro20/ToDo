@@ -5,9 +5,11 @@ import com.example.ToDo.entities.ToDo;
 import com.example.ToDo.exceptions.ToDoException;
 import com.example.ToDo.services.ToDoService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = "http://localhost:8080")
+@Validated
 public class ToDoController {
 
     private final ToDoService toDoService;
@@ -80,15 +83,25 @@ public class ToDoController {
      */
     @GetMapping("/todos")
     public Map<String, Object> getFilteredToDos(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page number cannot be negative") int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must not be less than one") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Boolean status,
             @RequestParam(required = false) String priority
     ) {
+        validatePaginationParameters(page, size);
         return toDoService.getFilteredToDos(page, size, sortBy, sortDir, name, status, priority);
+    }
+
+    private void validatePaginationParameters(int page, int size) {
+        if (page < 0) {
+            throw new ToDoException("INVALID_PAGE", "Page number cannot be negative");
+        }
+        if (size < 1) {
+            throw new ToDoException("INVALID_SIZE", "Page size must not be less than one");
+        }
     }
 
     /**
